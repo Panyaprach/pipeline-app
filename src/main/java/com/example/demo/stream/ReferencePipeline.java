@@ -5,7 +5,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-abstract class ReferencePipeline<P_IN, P_OUT> extends AbstractPipeline<P_IN, P_OUT> implements DataStream<P_OUT> {
+abstract class ReferencePipeline<P_IN, P_OUT> extends AbstractPipeline<P_IN, P_OUT> implements Pipeline<P_OUT> {
 
     public ReferencePipeline() {
         super();
@@ -16,10 +16,10 @@ abstract class ReferencePipeline<P_IN, P_OUT> extends AbstractPipeline<P_IN, P_O
     }
 
     @Override
-    public <R> DataStream<R> map(Function<? super P_OUT, ? extends R> mapper) {
+    public <R> Pipeline<R> map(Function<? super P_OUT, ? extends R> mapper) {
         Objects.requireNonNull(mapper);
 
-        return new StatelessOperator<P_OUT, R>(this) {
+        var op = new StatelessOperator<P_OUT, R>(this) {
             @Override
             Sink<P_OUT> opWrapSink(Sink<R> sink) {
                 return new Sink.ChainedReference<P_OUT, R>(sink) {
@@ -29,13 +29,16 @@ abstract class ReferencePipeline<P_IN, P_OUT> extends AbstractPipeline<P_IN, P_O
                 };
             }
         };
+
+        nextStage = op;
+        return op;
     }
 
     @Override
-    public DataStream<P_OUT> filter(Predicate<? super P_OUT> predicate) {
+    public Pipeline<P_OUT> filter(Predicate<? super P_OUT> predicate) {
         Objects.requireNonNull(predicate);
 
-        return new StatelessOperator<P_OUT, P_OUT>(this) {
+        var op = new StatelessOperator<P_OUT, P_OUT>(this) {
             @Override
             Sink<P_OUT> opWrapSink(Sink<P_OUT> sink) {
                 return new Sink.ChainedReference<P_OUT, P_OUT>(sink) {
@@ -49,13 +52,16 @@ abstract class ReferencePipeline<P_IN, P_OUT> extends AbstractPipeline<P_IN, P_O
                 };
             }
         };
+        nextStage = op;
+
+        return op;
     }
 
     @Override
-    public DataStream<P_OUT> process(Consumer<P_OUT> action) {
+    public Pipeline<P_OUT> process(Consumer<P_OUT> action) {
         Objects.requireNonNull(action);
 
-        return new StatelessOperator<P_OUT, P_OUT>(this) {
+        var op = new StatelessOperator<P_OUT, P_OUT>(this) {
             @Override
             Sink<P_OUT> opWrapSink(Sink<P_OUT> sink) {
                 return new Sink.ChainedReference<P_OUT, P_OUT>(sink) {
@@ -67,19 +73,8 @@ abstract class ReferencePipeline<P_IN, P_OUT> extends AbstractPipeline<P_IN, P_O
                 };
             }
         };
-    }
-
-    @Override
-    public void collect(P_OUT element) {
-        Sink<P_OUT> finalSink = wrapSink(new Sink.ChainedReference<P_OUT, P_OUT>(p -> {
-        }) {
-            @Override
-            public void accept(P_OUT u) {
-                downstream.accept(u);
-            }
-        });
-
-        finalSink.accept(element);
+        nextStage = op;
+        return op;
     }
 
     abstract static class StatelessOperator<E_IN, E_OUT> extends ReferencePipeline<E_IN, E_OUT> {

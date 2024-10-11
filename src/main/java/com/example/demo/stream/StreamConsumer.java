@@ -1,6 +1,21 @@
 package com.example.demo.stream;
 
-public interface StreamConsumer<T> {
+import java.util.Objects;
 
-    void collect(T item);
+public class StreamConsumer<T> {
+    private ReferencePipeline pipeline;
+
+    void setPipeline(ReferencePipeline pipeline) {
+        Objects.requireNonNull(pipeline);
+
+        this.pipeline = pipeline;
+    }
+
+    public void collect(T element) {
+        if (pipeline == null)
+            return;
+
+        Sink<T> sink = pipeline.getSink();
+        sink.accept(element);
+    }
 }
