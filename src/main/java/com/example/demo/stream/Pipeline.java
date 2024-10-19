@@ -6,7 +6,7 @@ import java.util.function.Predicate;
 
 public interface Pipeline<T> {
 
-    static <E> Pipeline<E> of(StreamConsumer<E> source) {
+    static <E> Pipeline<E> of(InfiniteSource<E> source) {
         ReferencePipeline.Head head = new ReferencePipeline.Head<>();
         source.setPipeline(head);
         return head;
@@ -16,5 +16,7 @@ public interface Pipeline<T> {
 
     Pipeline<T> filter(Predicate<? super T> predicate);
 
-    Pipeline<T> process(Consumer<T> action);
+    void apply(Consumer<T> action);
+
+    void print();
 }

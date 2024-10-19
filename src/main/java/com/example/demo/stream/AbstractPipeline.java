@@ -5,9 +5,9 @@ import java.util.Objects;
 public abstract class AbstractPipeline<E_IN, E_OUT> {
     @SuppressWarnings("rawTypes")
     private final AbstractPipeline previousStage;
+    private final int depth;
     @SuppressWarnings("rawTypes")
     protected AbstractPipeline nextStage;
-    private final int depth;
 
     public AbstractPipeline() {
         this.previousStage = null;
@@ -36,11 +36,10 @@ public abstract class AbstractPipeline<E_IN, E_OUT> {
     final <P_IN> Sink<P_IN> getSink() {
         @SuppressWarnings("rawTypes") AbstractPipeline p = this;
 
-        while(p.nextStage != null)
+        while (p.nextStage != null)
             p = p.nextStage;
 
-        Sink<E_OUT> sink = u -> {};
-        sink = p.wrapSink(sink);
+        Sink<E_OUT> sink = p.wrapSink(u -> {});
 
         return (Sink<P_IN>) sink;
     }

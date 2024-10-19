@@ -19,7 +19,7 @@ abstract class ReferencePipeline<P_IN, P_OUT> extends AbstractPipeline<P_IN, P_O
     public <R> Pipeline<R> map(Function<? super P_OUT, ? extends R> mapper) {
         Objects.requireNonNull(mapper);
 
-        var op = new StatelessOperator<P_OUT, R>(this) {
+        nextStage = new StatelessOperator<P_OUT, R>(this) {
             @Override
             Sink<P_OUT> opWrapSink(Sink<R> sink) {
                 return new Sink.ChainedReference<P_OUT, R>(sink) {
@@ -30,15 +30,14 @@ abstract class ReferencePipeline<P_IN, P_OUT> extends AbstractPipeline<P_IN, P_O
             }
         };
 
-        nextStage = op;
-        return op;
+        return (Pipeline<R>) nextStage;
     }
 
     @Override
     public Pipeline<P_OUT> filter(Predicate<? super P_OUT> predicate) {
         Objects.requireNonNull(predicate);
 
-        var op = new StatelessOperator<P_OUT, P_OUT>(this) {
+        nextStage = new StatelessOperator<P_OUT, P_OUT>(this) {
             @Override
             Sink<P_OUT> opWrapSink(Sink<P_OUT> sink) {
                 return new Sink.ChainedReference<P_OUT, P_OUT>(sink) {
@@ -52,16 +51,15 @@ abstract class ReferencePipeline<P_IN, P_OUT> extends AbstractPipeline<P_IN, P_O
                 };
             }
         };
-        nextStage = op;
 
-        return op;
+        return (Pipeline<P_OUT>) nextStage;
     }
 
     @Override
-    public Pipeline<P_OUT> process(Consumer<P_OUT> action) {
+    public void apply(Consumer<P_OUT> action) {
         Objects.requireNonNull(action);
 
-        var op = new StatelessOperator<P_OUT, P_OUT>(this) {
+        nextStage = new StatelessOperator<P_OUT, P_OUT>(ReferencePipeline.this) {
             @Override
             Sink<P_OUT> opWrapSink(Sink<P_OUT> sink) {
                 return new Sink.ChainedReference<P_OUT, P_OUT>(sink) {
@@ -73,8 +71,25 @@ abstract class ReferencePipeline<P_IN, P_OUT> extends AbstractPipeline<P_IN, P_O
                 };
             }
         };
-        nextStage = op;
-        return op;
+    }
+
+    @Override
+    public void print() {
+        Consumer<P_OUT> printer = System.out::println;
+
+        nextStage = new StatelessOperator<P_OUT, P_OUT>(ReferencePipeline.this) {
+            @Override
+            Sink<P_OUT> opWrapSink(Sink<P_OUT> sink) {
+                return new Sink.ChainedReference<P_OUT, P_OUT>(sink) {
+
+                    @Override
+                    public void accept(P_OUT u) {
+
+                        printer.andThen(downstream).accept(u);
+                    }
+                };
+            }
+        };
     }
 
     abstract static class StatelessOperator<E_IN, E_OUT> extends ReferencePipeline<E_IN, E_OUT> {
