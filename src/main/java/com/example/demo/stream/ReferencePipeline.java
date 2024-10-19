@@ -56,6 +56,26 @@ abstract class ReferencePipeline<P_IN, P_OUT> extends AbstractPipeline<P_IN, P_O
     }
 
     @Override
+    public Pipeline<P_OUT> process(Consumer<P_OUT> action) {
+        Objects.requireNonNull(action);
+
+        nextStage = new StatelessOperator<P_OUT, P_OUT>(ReferencePipeline.this) {
+            @Override
+            Sink<P_OUT> opWrapSink(Sink<P_OUT> sink) {
+                return new Sink.ChainedReference<P_OUT, P_OUT>(sink) {
+
+                    @Override
+                    public void accept(P_OUT u) {
+                        action.andThen(downstream).accept(u);
+                    }
+                };
+            }
+        };
+
+        return (Pipeline<P_OUT>) nextStage;
+    }
+
+    @Override
     public void apply(Consumer<P_OUT> action) {
         Objects.requireNonNull(action);
 

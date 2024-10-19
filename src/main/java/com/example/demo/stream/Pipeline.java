@@ -16,6 +16,8 @@ public interface Pipeline<T> {
 
     Pipeline<T> filter(Predicate<? super T> predicate);
 
+    Pipeline<T> process(Consumer<T> action);
+
     void apply(Consumer<T> action);
 
     void print();
