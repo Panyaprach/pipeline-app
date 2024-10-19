@@ -8,7 +8,7 @@ import java.util.List;
 
 @Getter
 public class WindowContext<T> {
-    List<T> contents = Collections.synchronizedList(new ArrayList<>());
+    final List<T> contents = Collections.synchronizedList(new ArrayList<>());
 
     public void add(T element) {
         contents.add(element);

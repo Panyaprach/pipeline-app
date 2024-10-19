@@ -32,47 +32,51 @@ final class TimeWindowStream<T> extends AbstractTimeWindowStream<T> {
 
     @Override
     void onElement(T element) {
-        long now = System.currentTimeMillis();
-        Collection<TimeWindow> windows = assigner.assignWindows(element, now);
-        for (TimeWindow window : windows) {
-            WindowContext<T> ctx = state.computeIfAbsent(window, w -> new WindowContext<T>());
-            ctx.add(element);
+        synchronized (this) {
+            long now = System.currentTimeMillis();
+            Collection<TimeWindow> windows = assigner.assignWindows(element, now);
+            for (TimeWindow window : windows) {
+                WindowContext<T> ctx = state.computeIfAbsent(window, w -> new WindowContext<T>());
+                ctx.add(element);
 
-            TriggerResult triggerResult = trigger.onElement(element, now, ctx);
+                TriggerResult triggerResult = trigger.onElement(element, now, ctx);
 
-            if (triggerResult.isFire()) {
-                if (ctx.isEmpty())
-                    continue;
+                if (triggerResult.isFire()) {
+                    if (ctx.isEmpty())
+                        continue;
 
-                List<T> contents = ctx.getContents();
-                emitWindow(window, contents);
+                    List<T> contents = ctx.getContents();
+                    emitWindow(window, contents);
+                }
+
+                if (triggerResult.isPurge())
+                    ctx.clear();
             }
-
-            if (triggerResult.isPurge())
-                ctx.clear();
         }
     }
 
     @Override
     void onTime() {
-        if (state.isEmpty())
-            return;
+        synchronized (this) {
+            if (state.isEmpty())
+                return;
 
-        long now = System.currentTimeMillis();
-        for (TimeWindow window : state.keySet()) {
-            WindowContext<T> ctx = state.get(window);
-            TriggerResult triggerResult = trigger.onTime(now, window, ctx);
+            long now = System.currentTimeMillis();
+            for (TimeWindow window : state.keySet()) {
+                WindowContext<T> ctx = state.get(window);
+                TriggerResult triggerResult = trigger.onTime(now, window, ctx);
 
-            if (triggerResult.isFire()) {
-                if (ctx.isEmpty())
-                    continue;
+                if (triggerResult.isFire()) {
+                    if (ctx.isEmpty())
+                        continue;
 
-                List<T> contents = ctx.getContents();
-                emitWindow(window, contents);
+                    List<T> contents = ctx.getContents();
+                    emitWindow(window, contents);
+                }
+
+                if (triggerResult.isPurge())
+                    ctx.clear();
             }
-
-            if (triggerResult.isPurge())
-                ctx.clear();
         }
     }
 

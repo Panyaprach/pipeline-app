@@ -2,13 +2,14 @@ package com.example.demo.stream.windowing;
 
 import com.example.demo.stream.trigger.Trigger;
 
+import java.io.Closeable;
 import java.time.Duration;
 import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 
-public interface WindowStream<T> extends AutoCloseable {
+public interface WindowStream<T> extends Closeable {
 
     void trigger(Trigger<? super T> trigger);
     void collect(T element);
