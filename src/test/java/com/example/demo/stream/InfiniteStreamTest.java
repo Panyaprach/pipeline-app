@@ -13,7 +13,7 @@ class InfiniteStreamTest {
 
     @Test
     void whenFilter_thenOk() {
-        Consumer<Integer> sink = spy(new Validator<>());
+        Consumer<Integer> sink = spy(new ConsumerTestSupport<>());
 
         Pipeline.of(source)
                 .filter(i -> i % 2 == 0)
@@ -30,7 +30,7 @@ class InfiniteStreamTest {
 
     @Test
     void whenMap_thenOk() {
-        Consumer<String> sink = spy(new Validator<>());
+        Consumer<String> sink = spy(new ConsumerTestSupport<>());
 
         Pipeline.of(source)
                 .map(Integer::toHexString)
@@ -43,7 +43,7 @@ class InfiniteStreamTest {
 
     @Test
     void whenApply_thenOk() {
-        Consumer<Integer> sink = spy(new Validator<>());
+        Consumer<Integer> sink = spy(new ConsumerTestSupport<>());
 
         Pipeline.of(source).apply(sink);
 
@@ -58,7 +58,7 @@ class InfiniteStreamTest {
 
     @Test
     void whenProcess_thenOk() {
-        Consumer<Integer> sink = spy(new Validator<>());
+        Consumer<Integer> sink = spy(new ConsumerTestSupport<>());
 
         Pipeline.of(source)
                 .process(sink)
@@ -80,14 +80,6 @@ class InfiniteStreamTest {
         assertDoesNotThrow(() -> source.collect(1));
         assertDoesNotThrow(() -> source.collect(2));
         assertDoesNotThrow(() -> source.collect(3));
-    }
-
-    static class Validator<T> implements Consumer<T> {
-
-        @Override
-        public void accept(T t) {
-
-        }
     }
 
 }

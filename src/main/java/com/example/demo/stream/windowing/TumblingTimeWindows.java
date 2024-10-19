@@ -15,7 +15,7 @@ public class TumblingTimeWindows implements WindowAssigner<Object> {
 
     private TumblingTimeWindows(long size, long offset, WindowStagger windowStagger) {
         if (Math.abs(offset) >= size)
-            throw new IllegalArgumentException("TumblingProcessingTimeWindows parameters must satisfy abs(offset) < size");
+            throw new IllegalArgumentException("TumblingTimeWindows parameters must satisfy abs(offset) < size");
 
         this.size = size;
         this.globalOffset = offset;
