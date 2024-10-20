@@ -11,23 +11,20 @@ import java.util.function.Consumer;
 
 final class TimeWindowStream<T> extends AbstractTimeWindowStream<T> {
     private final HashMap<TimeWindow, WindowContext<T>> state = new HashMap<>();
-    private final Consumer<List<T>> task;
-    private final BiConsumer<TimeWindow, List<T>> richTask;
+    private final BiConsumer<TimeWindow, List<T>> task;
 
     private Trigger<T> trigger;
 
     TimeWindowStream(WindowAssigner<? super T> assigner, Consumer<List<T>> task) {
         super(assigner);
         this.trigger = (Trigger<T>) assigner.getDefaultTrigger();
-        this.task = task;
-        this.richTask = null;
+        this.task = new WindowTask<>(task);
     }
 
-    TimeWindowStream(WindowAssigner<? super T> assigner, BiConsumer<TimeWindow, List<T>> richTask) {
+    TimeWindowStream(WindowAssigner<? super T> assigner, BiConsumer<TimeWindow, List<T>> task) {
         super(assigner);
         this.trigger = (Trigger<T>) assigner.getDefaultTrigger();
-        this.task = null;
-        this.richTask = richTask;
+        this.task = task;
     }
 
     @Override
@@ -40,17 +37,7 @@ final class TimeWindowStream<T> extends AbstractTimeWindowStream<T> {
                 ctx.add(element);
 
                 TriggerResult triggerResult = trigger.onElement(element, now, ctx);
-
-                if (triggerResult.isFire()) {
-                    if (ctx.isEmpty())
-                        continue;
-
-                    List<T> contents = ctx.getContents();
-                    emitWindow(window, contents);
-                }
-
-                if (triggerResult.isPurge())
-                    ctx.clear();
+                triggerWindow(window, triggerResult, ctx);
             }
         }
     }
@@ -65,28 +52,27 @@ final class TimeWindowStream<T> extends AbstractTimeWindowStream<T> {
             for (TimeWindow window : state.keySet()) {
                 WindowContext<T> ctx = state.get(window);
                 TriggerResult triggerResult = trigger.onTime(now, window, ctx);
-
-                if (triggerResult.isFire()) {
-                    if (ctx.isEmpty())
-                        continue;
-
-                    List<T> contents = ctx.getContents();
-                    emitWindow(window, contents);
-                }
-
-                if (triggerResult.isPurge())
-                    ctx.clear();
+                triggerWindow(window, triggerResult, ctx);
             }
         }
     }
 
+    private void triggerWindow(TimeWindow window, TriggerResult triggerResult, WindowContext<T> ctx) {
+        if (triggerResult.isFire()) {
+            if (ctx.isEmpty())
+                return;
+
+            List<T> contents = ctx.getContents();
+            emitWindow(window, contents);
+        }
+
+        if (triggerResult.isPurge())
+            ctx.clear();
+    }
+
     @Override
     void emitWindow(TimeWindow window, List<T> contents) {
-        if (task!=null)
-            task.accept(contents);
-        else
-            richTask.accept(window, contents);
-
+        task.accept(window, contents);
         state.remove(window);
     }
 
@@ -94,4 +80,12 @@ final class TimeWindowStream<T> extends AbstractTimeWindowStream<T> {
     public void trigger(Trigger<? super T> trigger) {
         this.trigger = (Trigger<T>) trigger;
     }
+
+    private record WindowTask<T>(Consumer<List<T>> consumer) implements BiConsumer<TimeWindow, List<T>> {
+
+        @Override
+            public void accept(TimeWindow timeWindow, List<T> ts) {
+                consumer.accept(ts);
+            }
+        }
 }
