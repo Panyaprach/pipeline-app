@@ -11,16 +11,17 @@ import java.util.function.Consumer;
 
 public interface WindowStream<T> extends Closeable {
 
+    static <T> WindowStream<T> of(Duration size, Consumer<List<T>> task) {
+
+        return new TimeWindowStream<>(TumblingTimeWindows.of(size), task);
+    }
+
+    static <T> WindowStream<T> of(Duration size, BiConsumer<TimeWindow, List<T>> task) {
+
+        return new TimeWindowStream<>(TumblingTimeWindows.of(size), task);
+    }
+
     void trigger(Trigger<? super T> trigger);
+
     void collect(T element);
-
-    public static <T> WindowStream<T> of(Duration size, Consumer<List<T>> task) {
-
-        return new TimeWindowStream<>(TumblingTimeWindows.of(size), task);
-    }
-
-    public static <T> WindowStream<T> of(Duration size, BiConsumer<TimeWindow, List<T>> task) {
-
-        return new TimeWindowStream<>(TumblingTimeWindows.of(size), task);
-    }
 }

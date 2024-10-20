@@ -6,6 +6,7 @@ import java.util.function.Predicate;
 
 public interface Pipeline<T> {
 
+    @SuppressWarnings({"rawtypes", "unchecked"})
     static <E> Pipeline<E> of(InfiniteSource<E> source) {
         ReferencePipeline.Head head = new ReferencePipeline.Head<>();
         source.setPipeline(head);

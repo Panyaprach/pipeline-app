@@ -5,6 +5,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+@SuppressWarnings("unchecked")
 abstract class ReferencePipeline<P_IN, P_OUT> extends AbstractPipeline<P_IN, P_OUT> implements Pipeline<P_OUT> {
 
     public ReferencePipeline() {
@@ -22,7 +23,7 @@ abstract class ReferencePipeline<P_IN, P_OUT> extends AbstractPipeline<P_IN, P_O
         nextStage = new StatelessOperator<P_OUT, R>(this) {
             @Override
             Sink<P_OUT> opWrapSink(Sink<R> sink) {
-                return new Sink.ChainedReference<P_OUT, R>(sink) {
+                return new Sink.ChainedReference<>(sink) {
                     public void accept(P_OUT u) {
                         this.downstream.accept(mapper.apply(u));
                     }
@@ -40,7 +41,7 @@ abstract class ReferencePipeline<P_IN, P_OUT> extends AbstractPipeline<P_IN, P_O
         nextStage = new StatelessOperator<P_OUT, P_OUT>(this) {
             @Override
             Sink<P_OUT> opWrapSink(Sink<P_OUT> sink) {
-                return new Sink.ChainedReference<P_OUT, P_OUT>(sink) {
+                return new Sink.ChainedReference<>(sink) {
 
                     @Override
                     public void accept(P_OUT u) {
@@ -62,7 +63,7 @@ abstract class ReferencePipeline<P_IN, P_OUT> extends AbstractPipeline<P_IN, P_O
         nextStage = new StatelessOperator<P_OUT, P_OUT>(ReferencePipeline.this) {
             @Override
             Sink<P_OUT> opWrapSink(Sink<P_OUT> sink) {
-                return new Sink.ChainedReference<P_OUT, P_OUT>(sink) {
+                return new Sink.ChainedReference<>(sink) {
 
                     @Override
                     public void accept(P_OUT u) {
@@ -82,7 +83,7 @@ abstract class ReferencePipeline<P_IN, P_OUT> extends AbstractPipeline<P_IN, P_O
         nextStage = new StatelessOperator<P_OUT, P_OUT>(ReferencePipeline.this) {
             @Override
             Sink<P_OUT> opWrapSink(Sink<P_OUT> sink) {
-                return new Sink.ChainedReference<P_OUT, P_OUT>(sink) {
+                return new Sink.ChainedReference<>(sink) {
 
                     @Override
                     public void accept(P_OUT u) {
@@ -100,7 +101,7 @@ abstract class ReferencePipeline<P_IN, P_OUT> extends AbstractPipeline<P_IN, P_O
         nextStage = new StatelessOperator<P_OUT, P_OUT>(ReferencePipeline.this) {
             @Override
             Sink<P_OUT> opWrapSink(Sink<P_OUT> sink) {
-                return new Sink.ChainedReference<P_OUT, P_OUT>(sink) {
+                return new Sink.ChainedReference<>(sink) {
 
                     @Override
                     public void accept(P_OUT u) {

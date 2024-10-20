@@ -10,6 +10,10 @@ public class CountTimingTrigger implements Trigger<Object> {
         this.maxCount = maxCount;
     }
 
+    public static CountTimingTrigger of(int maxCount) {
+        return new CountTimingTrigger(maxCount);
+    }
+
     @Override
     public TriggerResult onElement(Object element, long timestamp, WindowContext<Object> ctx) {
         if (ctx.size() == maxCount)
@@ -22,9 +26,5 @@ public class CountTimingTrigger implements Trigger<Object> {
     public TriggerResult onTime(long time, TimeWindow window, WindowContext<Object> ctx) {
 
         return TriggerResult.FIRE;
-    }
-
-    public static CountTimingTrigger of(int maxCount) {
-        return new CountTimingTrigger(maxCount);
     }
 }

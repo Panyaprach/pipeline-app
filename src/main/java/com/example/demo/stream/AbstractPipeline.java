@@ -3,10 +3,10 @@ package com.example.demo.stream;
 import java.util.Objects;
 
 public abstract class AbstractPipeline<E_IN, E_OUT> {
-    @SuppressWarnings("rawTypes")
+    @SuppressWarnings("rawtypes")
     private final AbstractPipeline previousStage;
     private final int depth;
-    @SuppressWarnings("rawTypes")
+    @SuppressWarnings("rawtypes")
     protected AbstractPipeline nextStage;
 
     public AbstractPipeline() {
@@ -25,7 +25,8 @@ public abstract class AbstractPipeline<E_IN, E_OUT> {
     final <P_IN> Sink<P_IN> wrapSink(Sink<E_OUT> sink) {
         Objects.requireNonNull(sink);
 
-        for (@SuppressWarnings("rawTypes") AbstractPipeline p = this; p.depth > 0; p = p.previousStage) {
+        //noinspection DataFlowIssue
+        for (@SuppressWarnings("rawtypes") AbstractPipeline p = this; p.depth > 0; p = p.previousStage) {
             sink = p.opWrapSink(sink);
         }
 
@@ -34,12 +35,13 @@ public abstract class AbstractPipeline<E_IN, E_OUT> {
 
     @SuppressWarnings("unchecked")
     final <P_IN> Sink<P_IN> getSink() {
-        @SuppressWarnings("rawTypes") AbstractPipeline p = this;
+        @SuppressWarnings("rawtypes") AbstractPipeline p = this;
 
         while (p.nextStage != null)
             p = p.nextStage;
 
-        Sink<E_OUT> sink = p.wrapSink(u -> {});
+        Sink<E_OUT> sink = p.wrapSink(u -> {
+        });
 
         return (Sink<P_IN>) sink;
     }

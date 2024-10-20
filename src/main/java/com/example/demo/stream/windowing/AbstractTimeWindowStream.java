@@ -1,13 +1,12 @@
 package com.example.demo.stream.windowing;
 
-import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-abstract class AbstractTimeWindowStream<T> implements WindowStream<T>{
-    private ScheduledExecutorService service = Executors.newSingleThreadScheduledExecutor();
+abstract class AbstractTimeWindowStream<T> implements WindowStream<T> {
     protected final WindowAssigner<? super T> assigner;
+    private final ScheduledExecutorService service = Executors.newSingleThreadScheduledExecutor();
 
     protected AbstractTimeWindowStream(WindowAssigner<? super T> assigner) {
         this.assigner = assigner;
@@ -28,6 +27,7 @@ abstract class AbstractTimeWindowStream<T> implements WindowStream<T>{
     }
 
     abstract void onElement(T element);
+
     abstract void onTime();
-    abstract void emitWindow(TimeWindow window, List<T> contents);
+
 }

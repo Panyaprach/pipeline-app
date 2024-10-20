@@ -69,8 +69,7 @@ final class TimeWindowStream<T> extends AbstractTimeWindowStream<T> {
             ctx.clear();
     }
 
-    @Override
-    void emitWindow(TimeWindow window, List<T> contents) {
+    private void emitWindow(TimeWindow window, List<T> contents) {
         task.accept(window, contents);
         state.remove(window);
     }
