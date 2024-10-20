@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
+@SuppressWarnings("unchecked")
 final class TimeWindowStream<T> extends AbstractTimeWindowStream<T> {
     private final HashMap<TimeWindow, WindowContext<T>> state = new HashMap<>();
     private final BiConsumer<TimeWindow, List<T>> task;
@@ -16,9 +17,7 @@ final class TimeWindowStream<T> extends AbstractTimeWindowStream<T> {
     private Trigger<T> trigger;
 
     TimeWindowStream(WindowAssigner<? super T> assigner, Consumer<List<T>> task) {
-        super(assigner);
-        this.trigger = (Trigger<T>) assigner.getDefaultTrigger();
-        this.task = new WindowTask<>(task);
+        this(assigner, (w, t) -> task.accept(t));
     }
 
     TimeWindowStream(WindowAssigner<? super T> assigner, BiConsumer<TimeWindow, List<T>> task) {
@@ -33,7 +32,7 @@ final class TimeWindowStream<T> extends AbstractTimeWindowStream<T> {
             long now = System.currentTimeMillis();
             Collection<TimeWindow> windows = assigner.assignWindows(element, now);
             for (TimeWindow window : windows) {
-                WindowContext<T> ctx = state.computeIfAbsent(window, w -> new WindowContext<T>());
+                WindowContext<T> ctx = state.computeIfAbsent(window, w -> new WindowContext<>());
                 ctx.add(element);
 
                 TriggerResult triggerResult = trigger.onElement(element, now, ctx);
@@ -81,11 +80,4 @@ final class TimeWindowStream<T> extends AbstractTimeWindowStream<T> {
         this.trigger = (Trigger<T>) trigger;
     }
 
-    private record WindowTask<T>(Consumer<List<T>> consumer) implements BiConsumer<TimeWindow, List<T>> {
-
-        @Override
-            public void accept(TimeWindow timeWindow, List<T> ts) {
-                consumer.accept(ts);
-            }
-        }
 }
